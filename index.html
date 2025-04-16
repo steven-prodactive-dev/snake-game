@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mouse‑Controlled Snake</title>
+  <!-- Brython runtime -->
+  <script src="https://cdn.jsdelivr.net/npm/brython@3.9.1/brython.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/brython@3.9.1/brython_stdlib.js"></script>
+  <style>
+    body { margin:0; display:flex; height:100vh; justify-content:center; align-items:center; background:#222; }
+    canvas { background:#111; border:2px solid #555; }
+  </style>
+</head>
+<body onload="brython()">
+  <canvas id="game" width="600" height="400"></canvas>
+
+  <!-- Python game logic -->
+  <script type="text/python">
+from browser import document, timer, html
+import random
+canvas = document["game"]
+ctx = canvas.getContext("2d")
+
+# Game state
+snake = [(300,200)]
+speed = 5
+dir_x, dir_y = speed, 0
+food = (random.randint(20,580), random.randint(20,380))
+
+# Draw everything
+def draw():
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    # draw food
+    ctx.fillStyle = "#f00"
+    ctx.beginPath()
+    ctx.arc(food[0], food[1], 8, 0, 6.28)
+    ctx.fill()
+    # draw snake
+    ctx.fillStyle = "#0f0"
+    for seg in snake:
+        ctx.fillRect(seg[0]-5, seg[1]-5, 10, 10)
+
+# Update logic
+def update():
+    global snake, food, dir_x, dir_y
+    head_x, head_y = snake[0]
+
+    # read mouse pos from attributes on the canvas element
+    mx = canvas.mouseX
+    my = canvas.mouseY
+    dx, dy = mx - head_x, my - head_y
+    dist = (dx*dx + dy*dy)**0.5
+    if dist:
+        dir_x, dir_y = speed * dx/dist, speed * dy/dist
+
+    new_head = (head_x+dir_x, head_y+dir_y)
+    snake.insert(0, new_head)
+
+    # Eat food?
+    if abs(new_head[0]-food[0])<10 and abs(new_head[1]-food[1])<10:
+        food = (random.randint(20,580), random.randint(20,380))
+    else:
+        snake.pop()
+
+    # Boundaries wrap
+    x,y = snake[0]
+    snake[0] = (x%canvas.width, y%canvas.height)
+    draw()
+
+# schedule at 20 fps
+timer.set_interval(update, 50)
+  </script>
+
+  <!-- JS to track mouse on the canvas -->
+  <script>
+    const game = document.getElementById("game");
+    game.mouseX = game.width/2;
+    game.mouseY = game.height/2;
+    game.addEventListener("mousemove", e => {
+      game.mouseX = e.offsetX;
+      game.mouseY = e.offsetY;
+    });
+  </script>
+</body>
+</html>
